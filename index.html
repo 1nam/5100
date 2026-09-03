@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHRONOS // IBM 5100 LINK</title>
+
+  <style>
+    :root {
+      --cyan: #5ffaff;
+      --blue: #4b8dff;
+      --dim: #527d91;
+      --bg: #02070c;
+      --panel: rgba(5, 19, 32, .9);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--cyan);
+      background:
+        radial-gradient(circle at 50% 0%, #123b55 0, transparent 38%),
+        linear-gradient(135deg, #010407, #061520 50%, #010406);
+      font-family: "Courier New", monospace;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .18;
+      background:
+        linear-gradient(rgba(95,250,255,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(95,250,255,.08) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, black, transparent);
+    }
+
+    .wrap {
+      width: min(980px, 94vw);
+      margin: 34px auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 20px;
+      padding: 18px 22px;
+      border: 1px solid var(--blue);
+      background: var(--panel);
+      box-shadow: 0 0 25px rgba(75,141,255,.25);
+    }
+
+    .title {
+      color: white;
+      font-size: clamp(19px, 4vw, 31px);
+      letter-spacing: 5px;
+      text-shadow: 0 0 12px var(--cyan);
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: var(--dim);
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
+
+    .status {
+      color: #75ff95;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .status::before {
+      content: "● ";
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      50% { opacity: .2; }
+    }
+
+    .terminal {
+      margin-top: 14px;
+      min-height: 590px;
+      padding: 24px;
+      border: 1px solid var(--cyan);
+      background:
+        linear-gradient(rgba(0,20,30,.76), rgba(0,5,12,.95)),
+        var(--bg);
+      box-shadow:
+        inset 0 0 55px rgba(0,200,255,.09),
+        0 0 30px rgba(0,220,255,.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .terminal::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 3px,
+        rgba(95,250,255,.025) 4px
+      );
+    }
+
+    #output {
+      position: relative;
+      z-index: 1;
+      white-space: pre-wrap;
+      line-height: 1.55;
+      font-size: clamp(13px, 2vw, 16px);
+    }
+
+    .input-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      margin-top: 20px;
+      color: white;
+    }
+
+    .prompt {
+      margin-right: 9px;
+      color: #75ff95;
+    }
+
+    #question {
+      min-width: 0;
+      flex: 1;
+      border: 0;
+      outline: 0;
+      color: white;
+      background: transparent;
+      font: inherit;
+      text-shadow: 0 0 8px var(--cyan);
+      caret-color: var(--cyan);
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      margin-top: 12px;
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    kbd {
+      color: var(--cyan);
+      border: 1px solid var(--dim);
+      padding: 2px 5px;
+    }
+
+    @media (max-width: 600px) {
+      .header {
+        display: block;
+      }
+
+      .status {
+        margin-top: 15px;
+      }
+
+      .terminal {
+        padding: 16px;
+      }
+
+      .footer {
+        display: block;
+        line-height: 1.8;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <header class="header">
+      <div>
+        <div class="title">CHRONOS // 5100</div>
+        <div class="subtitle">TEMPORAL COMMUNICATIONS INTERFACE</div>
+      </div>
+      <div class="status">LINK UNSTABLE</div>
+    </header>
+
+    <section class="terminal" onclick="document.getElementById('question').focus()">
+      <div id="output"></div>
+
+      <div class="input-row">
+        <span class="prompt">YOU &gt;</span>
+        <input
+          id="question"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Ask the traveler a question"
+        >
+      </div>
+    </section>
+
+    <div class="footer">
+      <span>Ask about: IBM 5100, the future, war, time travel, dates, or the machine</span>
+      <span><kbd>ENTER</kbd> transmit</span>
+    </div>
+  </main>
+
+  <script>
+    const output = document.getElementById("output");
+    const question = document.getElementById("question");
+
+    let responseNumber = 0;
+
+    const replies = [
+      "The IBM 5100 is not obsolete. It is merely waiting for the correct century.",
+      "I require parts that were manufactured before the problem was named.",
+      "Do not confuse a prediction with a memory.",
+      "The divergence was small at first. A missing vote. A changed headline.",
+      "You are asking the wrong question because your calendar is already different.",
+      "The machine can read languages that your newer systems forgot.",
+      "I came for the portable unit. I stayed because the return window closed.",
+      "Some wars begin long before the first soldier receives an order.",
+      "The future is not fixed. It is only heavily reinforced.",
+      "I cannot give you the exact date. Dates create dangerous confidence.",
+      "The old computer is valuable because it was built before the architecture changed.",
+      "Your network is too loud. Every signal leaves a shadow.",
+      "The first rule of temporal travel is never to carry anything that can be traced.",
+      "I have seen your history. It is not the same as mine.",
+      "The object you call a paradox is usually a scheduling error.",
+      "Do not expect photographs. Cameras make poor witnesses across a discontinuity.",
+      "A timeline does not break. It accumulates incompatible explanations.",
+      "The IBM 5100 has a diagnostic mode your manuals do not describe.",
+      "When the lights flicker, do not look at the screen immediately.",
+      "The year on the case is less important than the language in the firmware.",
+      "I am not here to prove anything. Proof is a luxury of stable observers.",
+      "Your question arrived before I sent the answer.",
+      "There are three versions of this conversation. You will remember only one.",
+      "The missing parts are common in your time and impossible in mine.",
+      "A receiver does not need to understand the signal to preserve it.",
+      "If you see a second cursor, disconnect the modem.",
+      "The calendar is a map, not a road.",
+      "You should be more concerned with what survives than with what happens.",
+      "I used a name that already existed. It was safer than explaining my own.",
+      "The machine does not travel. The information does.",
+      "No, I cannot tell you who wins. Winners are temporary categories.",
+      "There is no single future waiting at the end of this sentence.",
+      "The first message was sent by accident. The second one was not.",
+      "Your power grid is younger than you think and older than it looks.",
+      "Do not install software from a disk marked with tomorrow's date.",
+      "The parts list is also a message. Read the quantities carefully.",
+      "A military designation makes ordinary hardware sound more important than it is.",
+      "You will recognize the event only after people give it a different name.",
+      "I have met people who were dead in your newspapers.",
+      "The safest answer is usually the one that sounds least useful.",
+      "The 5100 was designed for field work. I am conducting field work.",
+      "You cannot photograph a route between two moments.",
+      "The signal weakens whenever someone says the word impossible.",
+      "I remember a city where your city is supposed to be.",
+      "There is no portal. There is only a narrow agreement between machines.",
+      "Your questions are being stored somewhere. Not by me.",
+      "I brought no weapons. Information is more difficult to confiscate.",
+      "The machine knows what year it is. It simply refuses to tell you.",
+      "If the terminal displays a blue line, stop typing.",
+      "I must go. The correction has found this channel."
+    ];
+
+    function print(text = "") {
+      output.textContent += text + "\\n";
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function boot() {
+      print("CHRONOS TEMPORAL COMMUNICATIONS INTERFACE");
+      print("HARDWARE PROFILE: IBM 5100 / MODIFIED");
+      print("LINK DATE: 04/27/2036");
+      print("LOCAL DATE: 09/03/2026");
+      print("");
+      print("REMOTE USER DETECTED.");
+      print("IDENTIFICATION: UNKNOWN");
+      print("LOCATION: UNRESOLVED");
+      print("");
+      print("A man is waiting on the other side of the connection.");
+      print("He says he needs parts.");
+      print("He says he is from the future.");
+      print("");
+      print("Type HELP for commands.");
+      question.focus();
+    }
+
+    function findReply(text) {
+      const lower = text.toLowerCase();
+
+      const keywordMap = [
+        [["ibm", "5100", "computer", "machine", "parts"], [0, 10, 17, 20, 40]],
+        [["future", "year", "date", "tomorrow", "timeline"], [1, 8, 9, 16, 31]],
+        [["war", "military", "weapon", "soldier"], [7, 11, 30, 36, 47]],
+        [["time", "travel", "traveler", "portal"], [2, 6, 12, 21, 29]],
+        [["who", "name", "identity", "person"], [13, 28, 38, 46]],
+        [["power", "light", "screen", "cursor"], [18, 32, 48]],
+        [["proof", "real", "true", "believe"], [3, 14, 19, 30, 42]]
+      ];
+
+      for (const [words, choices] of keywordMap) {
+        if (words.some(word => lower.includes(word))) {
+          return replies[choices[responseNumber % choices.length]];
+        }
+      }
+
+      return replies[responseNumber % replies.length];
+    }
+
+    function transmit(text) {
+      if (!text.trim()) return;
+
+      print("YOU > " + text);
+      print("");
+      print("REMOTE > " + findReply(text));
+      print("");
+      responseNumber++;
+
+      if (responseNumber === 5) {
+        print("[NOTICE] Temporal drift detected.");
+        print("[NOTICE] Remote timestamp is moving backward.");
+        print("");
+      }
+
+      if (responseNumber === 12) {
+        print("[NOTICE] Someone else is connected.");
+        print("");
+      }
+    }
+
+    question.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        const text = question.value;
+        question.value = "";
+        transmit(text);
+      }
+    });
+
+    boot();
+  </script>
+</body>
+</html>
