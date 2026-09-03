@@ -1,4 +1,4 @@
-# CHRONOS // 5100
+# CHRONOS // 5100     demo= https://1nam.github.io/5100/
 
 A small Halloween web project inspired by the internet legend of a time traveler using an IBM 5100 computer.
 
